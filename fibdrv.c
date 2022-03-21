@@ -24,10 +24,10 @@ static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static long long fib_sequence(long long k)
+static __uint128_t fib_sequence(long long k)
 {
     /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
-    long long f[k + 2];
+    __uint128_t f[k + 2];
 
     f[0] = 0;
     f[1] = 1;
@@ -60,7 +60,10 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    __uint128_t res = fib_sequence(*offset);
+    if (copy_to_user(buf, &res, sizeof(__uint128_t)))
+        return -EFAULT;
+    return 1;
 }
 
 /* write operation is skipped */
